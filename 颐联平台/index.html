@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="颐联多角色生活协同平台入口" />
+  <title>颐联 · 选择使用入口</title>
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <link rel="stylesheet" href="./role.css?v=8" />
+</head>
+<body class="portal-page">
+  <main class="portal-shell">
+    <header class="portal-brand"><span>颐</span><div><strong>颐联</strong><small>多维生活协同平台</small></div></header>
+    <section class="portal-intro">
+      <p>请选择您的使用入口</p>
+      <h1>每个角色，只看到该处理的事情</h1>
+      <span>三端数据按授权协同，但操作界面和权限彼此独立。</span>
+    </section>
+    <div class="portal-assurance" aria-label="平台协同原则">
+      <span><b>01</b> 三端独立</span>
+      <span><b>02</b> 按需授权</span>
+      <span><b>03</b> 全程留痕</span>
+    </div>
+    <section class="role-entry-grid">
+      <a class="role-entry elder-entry" href="./elder/" aria-label="进入颐联老人端">
+        <i>颐</i><div><small>自主生活</small><h2>老人端</h2><p>安排自己的生活事项、联系支持者并决定共享范围。</p><b>进入我的生活台 →</b></div>
+      </a>
+      <a class="role-entry family-entry" href="./family/" aria-label="进入颐联家属端">
+        <i>家</i><div><small>家庭守护</small><h2>家属端</h2><p>查看已授权事项、回复老人消息并提供必要协助。</p><b>进入家庭协同台 →</b></div>
+      </a>
+      <a class="role-entry community-entry" href="./community/" aria-label="进入颐联社区端">
+        <i>社</i><div><small>服务调度</small><h2>社区端</h2><p>处理服务队列、调配资源并跟进即将中断的事项。</p><b>进入社区工作台 →</b></div>
+      </a>
+    </section>
+    <footer class="portal-foot">颐联仅在老人授权范围内共享必要信息，各角色操作全程留痕。<button type="button" id="resetDemoBtn">重置演示数据</button></footer>
+  </main>
+  <script src="./shared.js?v=8"></script>
+  <script>YL.initShell();</script>
+</body>
+</html>
