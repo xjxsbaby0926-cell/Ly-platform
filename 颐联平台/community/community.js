@@ -139,6 +139,25 @@ staffSelect.value = currentStaffId;
 YL.initShell();
 renderAll();
 
+/* ---------- 服务对象名单:老人端/家属端每登录一个人,这里就多一个名字 ---------- */
+function renderRoster() {
+  const list = document.getElementById('rosterList');
+  const count = document.getElementById('rosterCount');
+  if (!list) return;
+  fetch('/api/public/roster')
+    .then(response => response.json())
+    .then(data => {
+      const users = (data.users || []).filter(item => item.nickname || item.role);
+      if (count) count.textContent = users.length + ' 人';
+      list.innerHTML = users.length
+        ? users.map(item => '<li><div><strong>' + escape(item.nickname || item.email) + '</strong><span>' + escape(item.email) + '</span></div><span class="readonly-badge">' + (item.role === 'elder' ? '老人' : '家属') + '</span></li>').join('')
+        : '<li class="empty">还没有用户登录</li>';
+    })
+    .catch(() => { list.innerHTML = '<li class="empty">名单加载失败</li>'; });
+}
+renderRoster();
+document.querySelector('[data-view="resources"]').addEventListener('click', renderRoster);
+
 staffSelect.addEventListener('change', event => {
   currentStaffId = event.target.value;
   YL.write(YL.KEYS.communityStaff, currentStaffId);
@@ -174,6 +193,49 @@ document.querySelector('#saveRulesBtn').addEventListener('click', () => {
   YL.saveRules([...document.querySelectorAll('[data-rule]')].map(input => input.checked));
   toast('社区调度规则已保存');
 });
+
+/* ---------- 数字安全专员:协助居民核验可疑信息 ---------- */
+function runCommunityCheck() {
+  const text = document.querySelector('#communitySafetyText').value.trim();
+  if (!text) { toast('请先粘贴需要核验的内容'); return; }
+  const trusted = { numbers: YL.trustedNumbers(), domains: YL.trustedDomains() };
+  const result = YL_SAFETY.check(text, trusted);
+  const serious = result.level === 'high' || result.level === 'medium';
+  const actions = serious
+    ? '<div class="risk-actions"><b>需要跟进吗?</b><div class="quick-row"><button type="button" data-risk-case>生成协同事项</button></div></div>'
+    : '';
+  document.querySelector('#communitySafetyResult').innerHTML = YL_SAFETY.renderReport(result, { actions });
+  const caseButton = document.querySelector('[data-risk-case]');
+  if (caseButton) caseButton.addEventListener('click', () => createRiskCase(result, text));
+  toast(`核验完成:${YL_SAFETY.LEVELS[result.level].short}`);
+}
+
+/* 高风险核验直接落成一条协同事项进入队列 —— 风控在这里和调度闭环 */
+function createRiskCase(result, text) {
+  const list = queue();
+  const staff = currentStaff();
+  list.push({
+    id: 'q' + Date.now(),
+    owner: staff.id,
+    risk: result.level === 'high' ? 3 : 2,
+    time: 120,
+    urgent: result.level === 'high',
+    phase: 'pending',
+    track: '诈骗核验',
+    status: '待跟进',
+    claimedBy: staff.name,
+    title: '可疑信息核验 · 待跟进',
+    description: `风险:${YL_SAFETY.LEVELS[result.level].label};内容:${String(text).replace(/\s+/g, ' ').slice(0, 40)}`,
+    deadline: '今天内'
+  });
+  YL.saveQueue(list);
+  renderAll();
+  const button = document.querySelector('[data-risk-case]');
+  if (button) { button.disabled = true; button.textContent = '已生成协同事项'; }
+  toast('已生成协同事项,可在「协同队列」查看跟进');
+}
+
+document.querySelector('#communityAnalyzeBtn').addEventListener('click', runCommunityCheck);
 
 /* 另一标签页(例如老人端确认了陪诊)改动数据时同步刷新 */
 window.addEventListener('storage', () => { renderAll(); });

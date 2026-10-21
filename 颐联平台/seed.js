@@ -25,10 +25,22 @@
   ];
 
   const contacts = {
-    daughter: { name: '周敏', role: '女儿 · 家庭联系人', avatar: '周', note: '通常在 18:00 后方便联系' },
-    community: { name: '林芳', role: '春和社区专员', avatar: '林', note: '今日值班至 18:00' },
-    repair: { name: '张师傅', role: '认证维修服务者', avatar: '张', note: '明天 10:00—11:00 上门' }
+    daughter: { name: '周敏', role: '女儿 · 家庭联系人', avatar: '周', phone: '13800138001', note: '通常在 18:00 后方便联系' },
+    community: { name: '林芳', role: '春和社区专员', avatar: '林', phone: '13900139001', note: '今日值班至 18:00' },
+    repair: { name: '张师傅', role: '认证维修服务者', avatar: '张', phone: '13700137001', note: '明天 10:00—11:00 上门' }
   };
+
+  /* 可信名单:核验时用来判断“这是不是自己人 / 官方渠道”。
+     这与“关键词识别”是两条独立的线 —— 同一条内容,来自可信号码还是陌生号码,结论完全不同。
+     演示里初始只有官方公开号码与家人/社区的联系方式;老人在核验结果里可以自行把号码加进来。 */
+  const trustedNumbers = [
+    '10086', '10010', '10000', '95588', '95533', '95566', '95599', '95555', '95511',   // 官方公开号码
+    '12333', '12345', '12315', '96110', '110', '119', '120',                            // 官方服务/应急
+    '13800138001', '13900139001', '13700137001'                                          // 女儿 / 社区专员 / 维修师傅
+  ];
+
+  // 按“后缀”匹配,所以 gov.cn 会覆盖所有政府网站
+  const trustedDomains = ['gov.cn', '12333.gov.cn', 'icbc.com.cn', 'ccb.com', 'abchina.com', 'boc.cn', '10086.cn', '10010.com', '189.cn', 'unionpay.com'];
 
   // 老人端“共享授权”的默认值:顺序与界面上的四行一致。
   const permissions = [true, true, true, false];
@@ -73,5 +85,5 @@
     { id: 'q16', owner: 'he', risk: 1, time: 260, phase: 'pending', track: '电话回访', status: '待回访', title: '马伯伯 · 独居关怀回访', description: '本周例行生活状态确认', deadline: '今天内' }
   ];
 
-  window.YL_SEED = { escort, events, contacts, permissions, rules, staff, queue };
+  window.YL_SEED = { escort, events, contacts, permissions, rules, staff, queue, trustedNumbers, trustedDomains };
 })();

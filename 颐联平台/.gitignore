@@ -1,0 +1,6 @@
+# 不要提交真实凭据
+.env
+data.db
+__pycache__/
+*.pyc
+node_modules/

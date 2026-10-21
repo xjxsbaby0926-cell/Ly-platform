@@ -6,35 +6,152 @@
   <meta name="description" content="颐联多角色生活协同平台入口" />
   <title>颐联 · 选择使用入口</title>
   <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
-  <link rel="stylesheet" href="./role.css?v=8" />
+  <link rel="stylesheet" href="./role.css?v=38" />
 </head>
 <body class="portal-page">
-  <main class="portal-shell">
-    <header class="portal-brand"><span>颐</span><div><strong>颐联</strong><small>多维生活协同平台</small></div></header>
-    <section class="portal-intro">
-      <p>请选择您的使用入口</p>
-      <h1>每个角色，只看到该处理的事情</h1>
-      <span>三端数据按授权协同，但操作界面和权限彼此独立。</span>
-    </section>
-    <div class="portal-assurance" aria-label="平台协同原则">
-      <span><b>01</b> 三端独立</span>
-      <span><b>02</b> 按需授权</span>
-      <span><b>03</b> 全程留痕</span>
+  <!-- 自动循环的视频背景 -->
+  <div class="hero-fixed" id="heroMedia" aria-hidden="true">
+    <video id="heroVideo" class="hero-video"
+      src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260616_212935_bbf608da-62d1-4f25-9be4-c346e4d09cc8.mp4"
+      autoplay loop muted playsinline preload="auto" crossorigin="anonymous"></video>
+    <div class="hero-scrim"></div>
+  </div>
+  <canvas id="heroParticles" class="hero-particles" aria-hidden="true"></canvas>
+
+  <header class="portal-head">
+    <div class="portal-strip">
+      <span>演示原型 · 所有数据仅保存在本机</span>
+      <nav aria-label="账户">
+        <button type="button" class="strip-button" id="stripLogout" hidden>退出登录</button>
+        <a href="./admin/">管理后台</a>
+      </nav>
     </div>
-    <section class="role-entry-grid">
-      <a class="role-entry elder-entry" href="./elder/" aria-label="进入颐联老人端">
-        <i>颐</i><div><small>自主生活</small><h2>老人端</h2><p>安排自己的生活事项、联系支持者并决定共享范围。</p><b>进入我的生活台 →</b></div>
-      </a>
-      <a class="role-entry family-entry" href="./family/" aria-label="进入颐联家属端">
-        <i>家</i><div><small>家庭守护</small><h2>家属端</h2><p>查看已授权事项、回复老人消息并提供必要协助。</p><b>进入家庭协同台 →</b></div>
-      </a>
-      <a class="role-entry community-entry" href="./community/" aria-label="进入颐联社区端">
-        <i>社</i><div><small>服务调度</small><h2>社区端</h2><p>处理服务队列、调配资源并跟进即将中断的事项。</p><b>进入社区工作台 →</b></div>
-      </a>
+    <div class="portal-nav">
+      <a class="portal-brand" href="./" aria-label="颐联首页"><span>颐</span><strong>颐联</strong></a>
+      <nav class="portal-links" aria-label="主要导航">
+        <a href="#roles" data-enter>选择入口</a>
+      </nav>
+      <div class="portal-tools">
+        <button type="button" class="auth-chip" id="authChip" hidden>我的账户</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="portal-main">
+    <!-- 第一屏:一句话简介 + 中间「登录」 -->
+    <section class="portal-hero">
+      <div class="portal-hero-inner" id="heroInner">
+        <p class="portal-eyebrow">颐联 · 多维生活协同平台</p>
+        <h1>每个角色，<br />只看到<em class="underline-mark">该处理的事情</em></h1>
+        <p class="portal-lede">老人、家属、社区三端按授权协同，界面与权限彼此独立。</p>
+        <button type="button" class="hero-enter" id="enterBtn">登录</button>
+        <p class="scroll-hint" aria-hidden="true"><span>向下滚动</span><i></i></p>
+      </div>
     </section>
-    <footer class="portal-foot">颐联仅在老人授权范围内共享必要信息，各角色操作全程留痕。<button type="button" id="resetDemoBtn">重置演示数据</button></footer>
+
+    <!-- 第二屏:三个角色入口,选一个再登录 -->
+    <section class="portal-roles" id="roles" aria-label="选择要进入的端">
+      <div class="roles-inner">
+        <p class="portal-eyebrow" id="rolesEyebrow">选择一个入口</p>
+        <div class="role-entry-grid" id="roleGrid">
+          <a class="role-entry elder-entry" href="./elder/" data-role-entry="elder" aria-label="进入颐联老人端">
+            <i aria-hidden="true">颐</i><div><small>自主生活</small><h2>老人端</h2><p>安排自己的生活事项、联系支持者并决定共享范围。</p><b>进入我的生活台 →</b></div>
+          </a>
+          <a class="role-entry family-entry" href="./family/" data-role-entry="family" aria-label="进入颐联家属端">
+            <i aria-hidden="true">家</i><div><small>家庭守护</small><h2>家属端</h2><p>查看已授权事项、回复老人消息并提供必要协助。</p><b>进入家庭协同台 →</b></div>
+          </a>
+          <a class="role-entry community-entry" href="./community/" data-role-entry="community" aria-label="进入颐联社区端">
+            <i aria-hidden="true">社</i><div><small>服务调度</small><h2>社区端</h2><p>处理服务队列、调配资源并跟进即将中断的事项。</p><b>进入社区工作台 →</b></div>
+          </a>
+        </div>
+
+        <!-- 选完角色后:邮箱验证码 -->
+        <form class="role-login" id="roleLoginForm" hidden>
+          <p class="role-login-title" id="roleLoginTitle"></p>
+          <div class="role-input-row">
+            <input id="roleEmail" type="email" autocomplete="email" placeholder="邮箱地址" aria-label="邮箱地址" />
+            <button type="button" class="role-mini" id="roleSendCode">发送验证码</button>
+          </div>
+          <div class="role-input-row">
+            <input id="roleCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="6 位验证码" aria-label="验证码" />
+            <button type="submit" class="role-submit">登录并进入</button>
+          </div>
+          <p class="role-hint" id="roleLoginHint">验证码 10 分钟内有效</p>
+          <button type="button" class="role-back" id="roleBack">← 返回选择入口</button>
+        </form>
+
+        <!-- 登录之后、进入之前:绑定对方邮箱 -->
+        <form class="role-login" id="roleBindForm" hidden>
+          <p class="role-login-title" id="roleBindTitle"></p>
+          <p class="role-hint" id="roleBindHint"></p>
+          <div class="role-input-row">
+            <input id="roleBindEmail" type="email" placeholder="家属邮箱" aria-label="对方邮箱" />
+            <button type="submit" class="role-submit">绑定并进入</button>
+          </div>
+          <button type="button" class="role-back" id="roleSelfBind">只有一个邮箱？用同一个邮箱</button>
+          <button type="button" class="role-back" id="roleBindBack">← 换个邮箱登录</button>
+        </form>
+      </div>
+    </section>
+
+    <section class="portal-principles" aria-label="平台协同原则">
+      <div class="principles-inner" id="principlesInner">
+        <p class="portal-eyebrow">我们如何协同</p>
+        <h2>三件事，缺一不可</h2>
+        <ul class="portal-assurance">
+          <li><b>01</b><strong>三端独立</strong><span>老人、家属、社区各有一套界面与权限，互不越界。</span></li>
+          <li><b>02</b><strong>按需授权</strong><span>只有老人打开的那几项，家属和社区才看得到。</span></li>
+          <li><b>03</b><strong>全程留痕</strong><span>确认、回复、核验、承接，每一步都有记录可查。</span></li>
+        </ul>
+      </div>
+    </section>
   </main>
-  <script src="./shared.js?v=8"></script>
+
+  <footer class="portal-foot">颐联仅在老人授权范围内共享必要信息，各角色操作全程留痕。<button type="button" id="resetDemoBtn">重置演示数据</button></footer>
+
+  <!-- 登录之后:账户与邮箱关联(右上角「我的账户」打开) -->
+  <dialog id="authDialog" class="auth-dialog">
+    <div class="auth-body">
+      <div class="auth-head">
+        <div>
+          <p class="section-kicker">账户</p>
+          <h2 id="authTitle">我的账户与关联</h2>
+        </div>
+        <button type="button" class="close-button" data-close-auth aria-label="关闭">×</button>
+      </div>
+
+      <div id="authAccount">
+        <div class="auth-account">
+          <strong id="authAccountEmail"></strong>
+          <div class="auth-account-actions">
+            <a class="text-button" id="authAdminLink" href="./admin/" hidden>管理后台</a>
+            <button type="button" class="text-button" id="authEditProfile">修改昵称与头像</button>
+            <button type="button" class="text-button" id="authLogout">退出登录</button>
+          </div>
+        </div>
+        <div class="auth-role">
+          <span>当前身份（切换后关联列表随之变化）</span>
+          <div class="quick-row">
+            <button type="button" data-set-role="elder">我是老人</button>
+            <button type="button" data-set-role="family">我是家属</button>
+          </div>
+        </div>
+        <p class="auth-hint" id="authBindHint"></p>
+        <ul class="auth-list" id="authBindingList"></ul>
+        <form class="auth-add" id="authBindForm">
+          <input id="authBindEmail" type="email" required placeholder="家属邮箱" />
+          <button class="soft-button" type="submit">添加关联</button>
+        </form>
+        <button type="button" class="text-button auth-self" id="authSelfBind">凑不出两个邮箱？用同一个邮箱</button>
+      </div>
+
+      <p class="auth-note">验证码通过邮箱发送；浏览器只保存登录凭证，不保存邮箱密码。</p>
+    </div>
+  </dialog>
+
+  <script src="./hero.js?v=38"></script>
+  <script src="./auth.js?v=38"></script>
+  <script src="./shared.js?v=38"></script>
   <script>YL.initShell();</script>
 </body>
 </html>

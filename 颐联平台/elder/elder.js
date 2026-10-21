@@ -111,19 +111,99 @@ document.querySelector('#eventForm').addEventListener('submit', e => {
   toast('生活事项已创建');
 });
 
-/* ---------- 安全核验 ---------- */
+/* ---------- 安全核验 ----------
+   识别逻辑在 safety.js(纯本地规则),这里只负责把结果讲清楚:
+   风险等级 + 命中了哪几类话术 + 具体命中词 + 链接/号码分析 + 该怎么做。 */
+function renderRisk(result) {
+  const serious = result.level === 'high' || result.level === 'medium';
+  const actions = serious
+    ? '<div class="risk-actions"><b>拿不准?让家人一起看</b><div class="quick-row"><button type="button" data-risk-share="daughter">发给女儿帮我看</button><button type="button" data-risk-share="community">发给社区专员</button></div></div>'
+    : '';
+  // 报告结构由 safety.js 统一生成(三端一致),这里只补上老人端特有的操作区
+  return YL_SAFETY.renderReport(result, { allowTrust: true, actions });
+}
+
+/* 一键把“内容 + 结论”发给家属或社区专员,复用已有的联系请求通道。
+   这样风控结果会进入三端协同,而不是停在老人自己的屏幕上。 */
+function bindRiskShare(result) {
+  document.querySelectorAll('[data-risk-share]').forEach(button => {
+    button.addEventListener('click', () => {
+      const contactId = button.dataset.riskShare;
+      const person = YL.contacts()[contactId];
+      const reason = '我收到一条可疑信息,请帮我确认';
+      const summary = `风险:${YL_SAFETY.LEVELS[result.level].label};内容:${String(result.raw).replace(/\s+/g, ' ').slice(0, 60)}`;
+      try {
+        YL.sendRequest(contactId, reason, summary);
+        renderContacts();
+        button.disabled = true;
+        button.textContent = `已发给${person.name}`;
+        toast(`已把这条内容和结论发给${person.name}`);
+      } catch (error) { toast(error.message); }
+    });
+  });
+}
+
+/* 允许老人把某个号码标成“可信”(家人、社区、官方号码),下次核验就不再标记它。
+   这是“发信人是谁”的轻量实现——真实系统里应由服务端下发号码归属。 */
+function bindTrustButtons() {
+  document.querySelectorAll('[data-trust-number]').forEach(button => {
+    button.addEventListener('click', () => {
+      const number = button.dataset.trustNumber;
+      YL.addTrustedNumber(number);
+      toast(`已把 ${number} 加入可信名单,以后再收到它不会被标记`);
+      const text = document.querySelector('#safetyText').value.trim();
+      if (text) runRiskCheck(text);
+    });
+  });
+}
+
+/* 核验记录:让“风控”这一步也留痕,家属和社区在授权范围内能看到 */
+function renderRiskLog() {
+  const box = document.querySelector('#riskLog');
+  if (!box) return;
+  const list = YL.riskChecks();
+  box.innerHTML = list.length ? list.slice(0, 8).map(item => {
+    const level = YL_SAFETY.LEVELS[item.level] || YL_SAFETY.LEVELS.none;
+    return `<li class="risk-log-item"><span class="risk-level ${item.level}">${escape(level.label)}</span><div><b>${escape(item.summary)}</b><small>${escape(item.by || '')} · ${time(item.at)}</small></div></li>`;
+  }).join('') : '<li class="empty">还没有核验记录</li>';
+}
+
+function runRiskCheck(text) {
+  const trusted = { numbers: YL.trustedNumbers(), domains: YL.trustedDomains() };
+  const result = YL_SAFETY.check(text, trusted);
+  YL.addRiskCheck({
+    id: Date.now(),
+    at: new Date().toISOString(),
+    by: '周淑兰',
+    level: result.level,
+    score: result.score,
+    summary: String(text).replace(/\s+/g, ' ').slice(0, 60)
+  });
+  document.querySelector('#safetyResult').innerHTML = renderRisk(result);
+  bindRiskShare(result);
+  bindTrustButtons();
+  renderRiskLog();
+  toast(`核验完成:${YL_SAFETY.LEVELS[result.level].short}`);
+}
+
 document.querySelector('#analyzeBtn').addEventListener('click', () => {
   const text = document.querySelector('#safetyText').value.trim();
   if (!text) { toast('请先输入需要核验的内容'); return; }
-  const hits = [/验证码|密码|银行卡/, /转账|汇款|安全账户/, /立即|马上|逾期/, /链接|下载|安装/].filter(x => x.test(text)).length;
-  document.querySelector('#safetyResult').innerHTML = hits
-    ? `<div class="risk-result"><strong>发现 ${hits} 类风险话术</strong><p>请不要点击链接、提供验证码或进行转账。建议通过官方公开电话核验,并联系家属共同确认。</p></div>`
-    : '<div class="empty"><strong>暂未发现明显风险话术</strong><br/>涉及资金和账户信息时仍应独立核验。</div>';
-  toast('安全核验已完成');
+  runRiskCheck(text);
 });
+renderRiskLog();
+// 一键填入典型话术,方便快速验证识别范围
+const sampleBox = document.querySelector('#safetySamples');
+if (sampleBox) {
+  sampleBox.innerHTML = YL_SAFETY.SAMPLES.map((item, i) => `<button type="button" data-sample="${i}">${escape(item.label)}</button>`).join('');
+  sampleBox.querySelectorAll('[data-sample]').forEach(button => button.addEventListener('click', () => {
+    document.querySelector('#safetyText').value = YL_SAFETY.SAMPLES[Number(button.dataset.sample)].text;
+    document.querySelector('#analyzeBtn').click();
+  }));
+}
 
 /* 另一标签页改动了数据时同步刷新(storage 事件只在其他文档触发) */
-window.addEventListener('storage', () => { renderEscort(); renderEvents(); renderContacts(); renderNotifications(); });
+window.addEventListener('storage', () => { renderEscort(); renderEvents(); renderContacts(); renderNotifications(); renderRiskLog(); });
 
 /* ---------- 可选的智能体工具(浏览器支持 WebMCP 时才生效) ---------- */
 YL.registerTool({

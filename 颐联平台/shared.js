@@ -25,10 +25,26 @@
     escort: 'yilian-escort',
     queue: 'yilian-community-queue',
     rules: 'yilian-community-rules',
+    riskChecks: 'yilian-risk-checks',
+    trustedNumbers: 'yilian-trusted-numbers',
+    trustedDomains: 'yilian-trusted-domains',
     largeText: 'yilian-large-text',
     communityStaff: 'ylCommunityStaff'
   };
   const ALL_KEYS = Object.keys(KEYS).map(k => KEYS[k]);
+
+  /* ---- 数据分区 ----
+     每个登录邮箱一份自己的数据:键名追加 ":邮箱"。
+     未登录时保持原来的键(演示数据),登录后各人互不影响。
+     社区端的队列/规则属于服务站,不分区。 */
+  const SCOPE_KEY = 'yl-scope';
+  let scope = '';
+  try { scope = localStorage.getItem(SCOPE_KEY) || ''; } catch (e) { scope = ''; }
+  const scoped = name => (scope ? name + ':' + scope : name);
+  const setScope = email => {
+    scope = email || '';
+    try { scope ? localStorage.setItem(SCOPE_KEY, scope) : localStorage.removeItem(SCOPE_KEY); } catch (e) {}
+  };
 
   const read = (key, fallback) => {
     try {
@@ -51,17 +67,34 @@
   const todayLabel = () => { const d = new Date(); return `${md(d)} · 星期${WEEKDAYS[d.getDay()]}`; };
 
   // ---- 老人端:生活事项 ----
-  const events = () => read(KEYS.events, SEED.events || []).map(item => ({ ...item, label: item.label || item.typeLabel || '生活事项', owner: item.ownerLabel || item.owner || '等待承接' }));
-  const saveEvents = value => write(KEYS.events, value);
+  const shapeEvent = item => ({ ...item, label: item.label || item.typeLabel || '生活事项', owner: item.ownerLabel || item.owner || '等待承接' });
+  const events = () => read(scoped(KEYS.events), scope ? [] : (SEED.events || [])).map(shapeEvent);
+  const saveEvents = value => write(scoped(KEYS.events), value);
+  // 按邮箱读某位老人的事项:家属端用它看已绑定老人共享的内容
+  const eventsOf = email => read(KEYS.events + ':' + email, []).map(shapeEvent);
+  const permissionsOf = email => read(KEYS.permissions + ':' + email, SEED.permissions || [true, true, true, false]);
+  const requestsOf = email => read(KEYS.requests + ':' + email, []);
+  const saveRequestsOf = (email, value) => write(KEYS.requests + ':' + email, value);
+  const replyRequestFor = (email, id, text) => {
+    const list = requestsOf(email);
+    const request = list.find(item => item.id === Number(id));
+    if (!request) throw new Error('未找到联系请求');
+    if (!String(text || '').trim()) throw new Error('请填写回复内容');
+    request.reply = String(text).trim();
+    request.repliedAt = new Date().toISOString();
+    request.status = 'replied';
+    saveRequestsOf(email, list);
+    return request;
+  };
 
   // ---- 老人端:共享授权(顺序:复诊用药 / 生活服务 / 数字安全 / 社交活动) ----
-  const permissions = () => read(KEYS.permissions, SEED.permissions || [true, true, true, false]);
-  const savePermissions = value => write(KEYS.permissions, value);
+  const permissions = () => read(scoped(KEYS.permissions), SEED.permissions || [true, true, true, false]);
+  const savePermissions = value => write(scoped(KEYS.permissions), value);
 
   // ---- 老人端:主动联系支持者 ----
   const contacts = () => SEED.contacts || {};
-  const requests = () => read(KEYS.requests, []);
-  const saveRequests = value => write(KEYS.requests, value);
+  const requests = () => read(scoped(KEYS.requests), []);
+  const saveRequests = value => write(scoped(KEYS.requests), value);
   const sendRequest = (contactId, reason, message) => {
     const all = contacts();
     if (!all[contactId]) throw new Error('未找到联系人');
@@ -79,8 +112,9 @@
 
   // ---- 三端共读:复诊陪诊确认 ----
   // 老人端点“确认社区陪诊”会写这里,家属端和社区端读同一份状态。
-  const escort = () => read(KEYS.escort, SEED.escort || { status: 'pending' });
-  const saveEscort = value => write(KEYS.escort, value);
+  const escort = () => read(scoped(KEYS.escort), SEED.escort || { status: 'pending' });
+  const saveEscort = value => write(scoped(KEYS.escort), value);
+  const escortOf = email => read(KEYS.escort + ':' + email, SEED.escort || { status: 'pending' });
   const confirmEscort = who => {
     const next = { ...escort(), status: 'confirmed', respondedAt: new Date().toISOString(), respondedBy: who || '周淑兰' };
     saveEscort(next); return next;
@@ -92,6 +126,28 @@
   const rules = () => read(KEYS.rules, SEED.rules || [true, true, true, true]);
   const saveRules = value => write(KEYS.rules, value);
   const staff = () => SEED.staff || [];
+
+  // ---- 风控:核验记录 + 可信名单 ----
+  // 核验记录让“风控”这一步也留痕:家属和社区在授权范围内能看到老人核验过什么。
+  const riskChecks = () => read(KEYS.riskChecks, []);
+  const saveRiskChecks = value => write(KEYS.riskChecks, value);
+  const addRiskCheck = entry => {
+    const list = riskChecks();
+    list.unshift(entry);
+    saveRiskChecks(list.slice(0, 50));
+    return entry;
+  };
+  // 可信名单:与“关键词识别”是两条独立的线——同一条内容,来自可信号码还是陌生号码,结论不同。
+  const trustedNumbers = () => read(KEYS.trustedNumbers, SEED.trustedNumbers || []);
+  const saveTrustedNumbers = value => write(KEYS.trustedNumbers, value);
+  const addTrustedNumber = number => {
+    const list = trustedNumbers();
+    const digits = String(number).replace(/\D/g, '');
+    if (digits && list.indexOf(digits) < 0) { list.push(digits); saveTrustedNumbers(list); }
+    return list;
+  };
+  const trustedDomains = () => read(KEYS.trustedDomains, SEED.trustedDomains || []);
+  const saveTrustedDomains = value => write(KEYS.trustedDomains, value);
 
   // ---- WebMCP(可选):页面能向浏览器里的智能体暴露工具时会用到 ----
   // 注意入口是 navigator.modelContext;旧写法 document.modelContext 并不存在,
@@ -227,9 +283,13 @@
   window.YL = {
     KEYS,
     read, write, escape, time, md, day, todayLabel,
-    events, saveEvents, permissions, savePermissions, contacts, requests, saveRequests, sendRequest, replyRequest,
-    escort, saveEscort, confirmEscort,
+    events, saveEvents, eventsOf, permissions, savePermissions, permissionsOf,
+    contacts, requests, saveRequests, requestsOf, saveRequestsOf, sendRequest, replyRequest, replyRequestFor,
+    get scope() { return scope; }, setScope,
+    escort, saveEscort, confirmEscort, escortOf,
     queue, saveQueue, rules, saveRules, staff,
+    riskChecks, saveRiskChecks, addRiskCheck,
+    trustedNumbers, saveTrustedNumbers, addTrustedNumber, trustedDomains, saveTrustedDomains,
     modelContext, registerTool,
     toast, resetDemo, initShell
   };

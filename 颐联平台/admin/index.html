@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="颐联 · 管理后台" />
+  <title>颐联 · 管理后台</title>
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <link rel="stylesheet" href="../role.css?v=38" />
+</head>
+<body class="role-app" data-role="community">
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand"><div class="brand-mark">管</div><div><strong>颐联</strong><span>管理后台</span></div></div>
+      <div class="role-badge" id="adminRoleBadge">网站管理员 · 仅限授权邮箱</div>
+      <div class="sidebar-foot"><a class="back-entry" href="../">← 返回入口</a></div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div><p class="eyebrow">管理后台</p><h1>用户与数据</h1></div>
+        <div class="top-actions">
+          <span class="readonly-badge" id="adminWho">未登录</span>
+        </div>
+      </header>
+
+      <div class="workspace">
+        <section id="loginPanel" class="card" hidden>
+          <div class="card-head"><div><p class="section-kicker">仅限授权邮箱</p><h2>登录管理后台</h2></div></div>
+          <div class="auth-stack" style="margin-top:16px;max-width:520px">
+            <label class="form-field">管理员邮箱<input id="adminEmail" type="email" autocomplete="email" placeholder="name@example.com" /></label>
+            <div class="auth-row">
+              <button type="button" class="soft-button" id="adminSendCode">发送验证码</button>
+              <span class="auth-hint" id="adminHint">验证码 10 分钟内有效</span>
+            </div>
+            <label class="form-field">验证码<input id="adminCode" inputmode="numeric" maxlength="6" placeholder="6 位数字" /></label>
+            <button type="button" class="primary-button" id="adminLogin">登录</button>
+          </div>
+        </section>
+
+        <section id="adminPanel" hidden>
+          <div class="metric-grid" id="adminTotals"></div>
+          <div class="card" style="margin-top:16px">
+            <div class="card-head">
+              <div><p class="section-kicker">全部账号</p><h2>用户列表</h2></div>
+              <button class="soft-button" id="adminRefresh">刷新</button>
+            </div>
+            <p class="muted">「重置为新用户」会清空这个人的昵称、头像、关联与消息,下次登录会重新要求设置资料。</p>
+            <ul class="auth-list" id="adminList" style="margin-top:14px"></ul>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <script src="../auth.js?v=38"></script>
+  <script src="./admin.js?v=38"></script>
+</body>
+</html>
