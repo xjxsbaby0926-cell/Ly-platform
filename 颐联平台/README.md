@@ -180,8 +180,8 @@ GET  /api/messages            收件箱
 在 `.env` 里配置管理员邮箱,分两级(都可多个,逗号分隔):
 
 ```
-ADMIN_PRIMARY_EMAILS=xjxsbaby0926@gmail.com     # 主管:全部权限,含删除账号
-ADMIN_SECONDARY_EMAILS=2116164179@qq.com       # 副管:查看用户、重置用户,不能删除
+ADMIN_PRIMARY_EMAILS=主管邮箱@example.com     # 主管:全部权限,含删除账号
+ADMIN_SECONDARY_EMAILS=副管邮箱@example.com   # 副管:查看用户、重置用户,不能删除
 ```
 
 用上述邮箱登录后访问 **`/admin/`**(入口页右上角一直有「管理后台」链接,登录后「我的账户」里也会出现):
